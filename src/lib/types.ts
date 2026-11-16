@@ -1,6 +1,6 @@
 export type SourceId = "github" | "gitlab" | "bitbucket";
 
-export type DiscoveredVia = "reddit" | "x";
+export type DiscoveredVia = "reddit" | "x" | "threads";
 
 export type Kind = "skill" | "mcp";
 
@@ -47,4 +47,14 @@ export type LiveSnapshot = {
   items: Listing[];
   notes: ScanNote[];
   at: string;
+};
+
+/** A submission the crawler or a person added, before the UI merges it. */
+export type SubmitState = "approved" | "pending" | "rejected" | "duplicate";
+
+export type SubmissionResult = {
+  ok: boolean;
+  state: SubmitState;
+  message: string;
+  listing?: Listing;
 };

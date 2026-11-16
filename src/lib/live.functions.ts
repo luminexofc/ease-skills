@@ -18,6 +18,13 @@ const SUBREDDITS = ["mcp", "ClaudeAI", "ClaudeCode", "AI_Agents", "agentic", "Lo
 
 const X_INSTANCES = ["https://nitter.kareem.one", "https://nitter.tiekoetter.com"];
 
+const THREADS_PROFILES = [
+  "https://www.threads.net/@elonmusk",
+  "https://www.threads.net/@meta",
+  "https://www.threads.net/@buildwithgrok",
+  "https://www.threads.net/@ai",
+];
+
 type RepoLookup = { at: number; listing: Listing | null };
 
 const repoCache = new Map<string, RepoLookup>();
@@ -274,9 +281,58 @@ async function xCandidates(): Promise<{ candidates: string[]; note: ScanNote }> 
   };
 }
 
+type ThreadsPost = { text: string };
+
+async function threadsPosts(): Promise<{ posts: ThreadsPost[]; ok: boolean }> {
+  const posts: ThreadsPost[] = [];
+  for (const profile of THREADS_PROFILES) {
+    const res = await fetchText(
+      profile,
+      15000,
+      "text/html",
+    );
+    if (!res.ok || !res.text.includes("<meta")) continue;
+    for (const full of githubReposFromText(res.text, 4)) {
+      posts.push({ text: full });
+    }
+  }
+  return { posts, ok: posts.length > 0 };
+}
+
+async function threadsCandidates(): Promise<{
+  candidates: string[];
+  note: ScanNote;
+}> {
+  const { posts, ok } = await threadsPosts();
+  if (!ok) {
+    return {
+      candidates: [],
+      note: {
+        source: "threads",
+        status: "limited",
+        detail: "Threads did not answer this pass. It will retry on the next refresh.",
+      },
+    };
+  }
+  const cutoff = Date.now() - FRESH_DAYS * 86_400_000;
+  const candidates = new Set<string>();
+  for (const post of posts) {
+    for (const full of githubReposFromText(post.text, 3)) candidates.add(full);
+  }
+  return {
+    candidates: [...candidates],
+    note: {
+      source: "threads",
+      status: "ok",
+      detail: `${posts.length} posts scanned · ${candidates.size} repo links.`,
+    },
+  };
+}
+
 async function resolveCommunity(
   reddit: string[],
   x: string[],
+  threads: string[],
 ): Promise<{ items: Listing[]; limited: boolean }> {
   const merged = new Map<string, { full: string; via: Set<DiscoveredVia> }>();
   const add = (full: string, via: DiscoveredVia) => {
@@ -287,6 +343,7 @@ async function resolveCommunity(
   };
   for (const full of reddit) add(full, "reddit");
   for (const full of x) add(full, "x");
+  for (const full of threads) add(full, "threads");
 
   const picks = [...merged.values()].slice(0, MAX_COMMUNITY_REPOS);
   const items: Listing[] = [];
@@ -306,9 +363,14 @@ async function resolveCommunity(
 }
 
 async function build(): Promise<{ at: number; items: Listing[]; notes: ScanNote[] }> {
-  const [github, reddit, x] = await Promise.all([scanGithubRecent(), redditCandidates(), xCandidates()]);
-  const community = await resolveCommunity(reddit.candidates, x.candidates);
-  const notes: ScanNote[] = [github.note, reddit.note, x.note];
+  const [github, reddit, x, threads] = await Promise.all([
+    scanGithubRecent(),
+    redditCandidates(),
+    xCandidates(),
+    threadsCandidates(),
+  ]);
+  const community = await resolveCommunity(reddit.candidates, x.candidates, threads.candidates);
+  const notes: ScanNote[] = [github.note, reddit.note, x.note, threads.note];
   if (community.limited) {
     notes.push({
       source: "github",

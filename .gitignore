@@ -10,3 +10,8 @@ screenshots/
 .env
 .env.*
 .DS_Store
+.vercel
+.env*
+
+# local editor tooling
+.serena/

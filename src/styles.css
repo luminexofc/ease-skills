@@ -1,16 +1,24 @@
 @import "tailwindcss";
 
 @theme {
+  /* Type: Fraunces is a warm, high-contrast serif that carries the printed-catalog
+     voice the directory is built on; Outfit stays quiet for metadata and controls.
+     A serif display against a neutral sans is the identity, not a default pairing. */
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-sans: "Outfit", system-ui, sans-serif;
+
+  /* Palette: paper and ink first, one teal accent, one clay stamp for the free
+     licence mark. Two cores plus one accent, which is the whole system. */
   --color-paper: #f4f0e6;
   --color-ink: #1c1915;
-  --color-muted: #6e675e;
+  --color-muted: #575149;
   --color-line: #e3dcd0;
+  --color-line-strong: #cdc3b2;
   --color-card: #fffdf8;
   --color-teal: #0e6e64;
   --color-teal-soft: #e5f3f1;
   --color-clay: #c4512c;
+  --color-clay-ink: #a8411f;
   --color-clay-soft: #f8ebe4;
   --radius-card: 0.375rem;
 }
@@ -19,17 +27,31 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
 
   body {
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-synthesis-weight: none;
+  }
+
+  /* Focus is a state, not decoration: one visible ring on every control, offset so
+     it never disappears against the card or the ink fill. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
   }
 
   ::selection {
@@ -42,11 +64,30 @@
   text-wrap: pretty;
 }
 
+/* Rules carry the structure in a print index, so they get a token each. */
+@utility rule {
+  border-top: 1px solid var(--color-line);
+}
+
+/* Small caps metadata: the catalog's recurring label voice. */
+@utility label-caps {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

@@ -283,7 +283,7 @@ export function mergeVia(
 ): DiscoveredVia[] | undefined {
   const set = new Set<DiscoveredVia>([...(a ?? []), ...(b ?? [])]);
   if (!set.size) return undefined;
-  return (["reddit", "x"] as DiscoveredVia[]).filter((v) => set.has(v));
+  return (["reddit", "x", "threads"] as DiscoveredVia[]).filter((v) => set.has(v));
 }
 
 export function asListing(partial: Omit<Listing, "id"> & { id?: string }): Listing {
